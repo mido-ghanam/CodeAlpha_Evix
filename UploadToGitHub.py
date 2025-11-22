@@ -1,0 +1,23 @@
+from datetime import datetime
+import os, pytz
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+project = "CodeAlpha_Evix"
+
+try:
+  if input("Did you have a git repo installed? (y/n): ").lower()[0] == "n":
+    os.system(f'''git init && \
+    git remote add origin https://github.com/mido-ghanam/{project}.git ''')
+except:
+  pass
+
+q = input("Adding a commit message? (Skip avilable): ")
+
+os.system(f'''
+git add . && \
+git commit -m "{datetime.now(pytz.timezone("Africa/Cairo")).strftime("%d-%m-%Y | %H:%M:%S")}{ f' | {q}' if q else '' }" && \
+git branch -M main && \
+git push https://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@github.com/mido-ghanam/{project}.git main --force
+''')
+#git clone https://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@github.com/mido-ghanam/AuthFlowX.git
