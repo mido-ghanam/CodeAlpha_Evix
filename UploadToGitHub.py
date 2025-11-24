@@ -1,6 +1,7 @@
 from datetime import datetime
 import os, pytz
 
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 project = "CodeAlpha_Evix"
