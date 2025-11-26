@@ -7,11 +7,8 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 project = "CodeAlpha_Evix"
 
 try:
-  if input("Did you have a git repo installed? (y/n): ").lower()[0] == "n":
-    os.system(f'''git init && \ 
-    git remote add origin https://github.com/mido-ghanam/{project}.git ''')
-except:
-  pass
+  if input("Did you have a git repo installed? (y/n): ").lower()[0] == "n": os.system(f'git init && git remote add origin https://github.com/mido-ghanam/{project}.git')
+except: pass
 
 q = input("Adding a commit message? (Skip avilable): ")
 
