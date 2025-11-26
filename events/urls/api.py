@@ -10,4 +10,6 @@ urlpatterns = [
   path("<uuid:pk>/check-in-list/", apiV.registrations.CheckInListAPI.as_view(), name="EventCheckInListAPI"),
   path("<uuid:pk>/upload-banner/", apiV.events.UploadBannerAPI.as_view(), name="EventUploadBannerAPI"),
   path("categories/", apiV.events.CategoriesAPI.as_view(), name="EventCategoriesAPI"),
+  path("me/registrations/", apiV.registrations.UserRegistrationsAPI.as_view()),
+
 ]
