@@ -4,3 +4,7 @@ PyJWT
 django-cors-headers
 djangorestframework-simplejwt
 whitenoise
+Pillow
+dj-database-url
+psycopg2-binary
+pytest-django

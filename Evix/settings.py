@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
+import logging
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-opmts4u$-ds8_ti#@+@(inq%ew^r+1rff-=v679ze#1*ybake#'
+# SECURITY: prefer environment-provided secrets in production
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-opmts4u$-ds8_ti#@+@(inq%ew^r+1rff-=v679ze#1*ybake#')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG should be False in production. Control via env var.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = ["*"]
+# Set allowed hosts via env var (comma-separated). Default to localhost for dev.
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
 
 
 # Application definition
@@ -42,6 +45,63 @@ INSTALLED_APPS = [
   "events", "core", "authentication",
    
 ]
+
+# CORS (basic configuration). In production set specific origins via env var.
+if os.environ.get('DJANGO_CORS_ALLOW_ALL', 'False').lower() in ('1', 'true', 'yes'):
+  CORS_ALLOW_ALL_ORIGINS = True
+else:
+  CORS_ALLOWED_ORIGINS = os.environ.get('DJANGO_CORS_ALLOWED_ORIGINS', '').split(',') if os.environ.get('DJANGO_CORS_ALLOWED_ORIGINS') else []
+
+# REST framework / Simple JWT sensible defaults
+REST_FRAMEWORK = {
+  'DEFAULT_AUTHENTICATION_CLASSES': (
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+  ),
+  'DEFAULT_PERMISSION_CLASSES': (
+    'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+  ),
+  'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+  'PAGE_SIZE': 10,
+  'DEFAULT_THROTTLE_CLASSES': [
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle'
+  ],
+  'DEFAULT_THROTTLE_RATES': {
+    'anon': '100/day',
+    'user': '1000/day'
+  }
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+  'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.environ.get('SIMPLE_JWT_ACCESS_MINUTES', '60'))),
+  'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.environ.get('SIMPLE_JWT_REFRESH_DAYS', '7'))),
+  'ROTATE_REFRESH_TOKENS': False,
+  'BLACKLIST_AFTER_ROTATION': True,
+}
+
+
+# Basic logging configuration
+LOG_LEVEL = os.environ.get('DJANGO_LOG_LEVEL', 'INFO')
+LOGGING = {
+  'version': 1,
+  'disable_existing_loggers': False,
+  'formatters': {
+    'standard': {
+      'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
+    },
+  },
+  'handlers': {
+    'console': {
+      'class': 'logging.StreamHandler',
+      'formatter': 'standard'
+    },
+  },
+  'root': {
+    'handlers': ['console'],
+    'level': LOG_LEVEL,
+  },
+}
 
 MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
@@ -77,12 +137,29 @@ WSGI_APPLICATION = 'Evix.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-  'default': {
+DATABASES = {}
+
+# Database configuration: default to local SQLite `main.db`.
+# To use a DATABASE_URL (e.g., Postgres) set the env var `DJANGO_USE_DATABASE_URL=true`
+# and provide `DATABASE_URL`.
+USE_DATABASE_URL = os.environ.get('DJANGO_USE_DATABASE_URL', 'False').lower() in ('1', 'true', 'yes')
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if USE_DATABASE_URL and DATABASE_URL:
+  try:
+    import dj_database_url
+    DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+  except Exception:
+    # fallback to local sqlite on any parse/import error
+    DATABASES['default'] = {
+      'ENGINE': 'django.db.backends.sqlite3',
+      'NAME': BASE_DIR / 'main.db',
+    }
+else:
+  DATABASES['default'] = {
     'ENGINE': 'django.db.backends.sqlite3',
     'NAME': BASE_DIR / 'main.db',
   }
-}
 
 
 # Password validation
